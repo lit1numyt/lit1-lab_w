@@ -1,0 +1,41 @@
+---
+title: Message System
+description: Placeholder heap exploitation writeup.
+type: writeup
+ctf: CSCV2026
+category: Pwn
+difficulty: Medium
+date: 2026-09-25
+tags:
+  - pwn
+  - heap
+  - pie
+---
+
+Placeholder writeup body.
+
+## Leak
+
+```c
+struct msg { char *buf; size_t len; };
+void show(struct msg *m) { write(1, m->buf, m->len); }
+```
+
+```python
+from pwn import *
+io = process("./chall")
+base = leak - offset
+win = base + 0x21BE
+```
+
+```asm
+mov rdi, rax
+call puts
+```
+
+```text
+pwndbg> x/4gx 0x555555559290
+0x555555559290: 0x0000000000000000 0x0000000000000021
+```
+
+The address is $win = PIE_{base} + 0x21BE$.

