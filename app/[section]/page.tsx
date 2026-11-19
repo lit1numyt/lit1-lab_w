@@ -18,7 +18,7 @@ const sub: Record<string, string> = {
 };
 
 export const revalidate = 3600;
-export const dynamicParams = false;
+export const dynamicParams = true; // must be true: with false, Next 14 404s these pages after revalidatePath (unknown sections still 404 via notFound())
 
 export const generateStaticParams = () =>
   SECTIONS.map((section) => ({ section }));
