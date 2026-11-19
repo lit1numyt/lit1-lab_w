@@ -28,7 +28,7 @@ The app listens on `127.0.0.1:3000` only. Expose it with a Cloudflare Tunnel (`c
 - Colors, spacing scale, Inter and width come from the reference site's computed styles. Neue Haas Grotesk is commercial, so headings use "Helvetica Neue" (present on macOS) then Inter. Light-mode background/border/muted are estimates.
 - Not implemented: click-to-enlarge images, table of contents, footnote styling checks, per-section RSS feeds, per-page OG images.
 - Search is a client-side scan over titles, descriptions, tags and the first 6,000 characters of each body.
-- Placeholders `[NAME]`, `[DESCRIPTION]`, `[EMAIL]`, `[GITHUB]` are set via `.env`; edit `lib/site.ts` for other links.
+- Name, description, email and GitHub come from `.env` (fallbacks in `lib/site.ts`; the email has none, so it stays out of the public repo). Extra footer links go in `links` in `lib/site.ts`.
 
 ## List-page frontmatter (all optional)
 - Essays: `group:` and `subgroup:` place an essay in the two-column topic lists; a green/yellow dot marks essays dated (or `updated:`) within 30/90 days.

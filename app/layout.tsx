@@ -14,7 +14,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <header className="top"><Nav /><OpenPalette /></header>
       {children}
       <footer><div>{site.name}</div>
-        <div className="row"><a href={`mailto:${site.email}`}>Contact</a><a href={site.github}>GitHub</a>
+        <div className="row">{site.email && <a href={`mailto:${site.email}`}>Contact</a>}<a href={site.github}>GitHub</a>
           {site.links.map((l) => <a key={l.href} href={l.href}>{l.label}</a>)}<a href="/rss.xml">RSS</a></div></footer>
       <Palette index={index} />
     </body></html>);

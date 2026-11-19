@@ -12,9 +12,9 @@ const copy: Record<string, string> = {
 };
 
 const sub: Record<string, string> = {
-  research: "[Research notes and technical deep-dives.]",
-  writeups: "[CTF writeups and solutions.]",
-  projects: "[Things I have built.]",
+  research: "notes and deep-dives from poking at things.",
+  writeups: "ctf writeups, mostly pwn. how i solved it, including the parts where i got stuck.",
+  projects: "stuff i've built.",
 };
 
 export const revalidate = 3600;

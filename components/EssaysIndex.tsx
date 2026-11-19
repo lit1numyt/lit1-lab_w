@@ -10,7 +10,7 @@ export default function EssaysIndex() {
     <div className="headrow"><h1 className="page-h">Essays by {site.name}</h1>
       <p className="legend"><span><i className="dot recent" />last 30 days</span><span><i className="dot fresh" />last 90 days</span></p></div>
     <p className="page-sub">{site.description}</p>
-    <details className="about"><summary>About this collection</summary><p>[Describe this collection here. Replace this placeholder.]</p></details>
+    <details className="about"><summary>About this collection</summary><p>longer-form thoughts that aren't writeups. the ctf stuff lives under Writeups.</p></details>
     {items.length > 0 && <><h2 className="sec-h">Recent Essays</h2><Recent items={items.slice(0, 5)} /></>}
     <div className="groups">{[...groups].map(([g, subs]) => (<section key={g}><h2 className="sec-h">{g}</h2>
       {[...subs].map(([s, list]) => (<div key={s}>{s && <h3 className="sub">{s}</h3>}<ul className="plain">{list.map((i) => (
