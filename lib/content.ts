@@ -3,7 +3,7 @@ export const SECTIONS = ["essays", "research", "writeups", "projects"] as const;
 export type Section = (typeof SECTIONS)[number];
 export type Item = { section: Section; slug: string[]; url: string; title: string; description: string; date: string;
   updated?: string; tags: string[]; minutes: number; body: string; dir: string; ext: string; meta: Record<string, string>; headings: { depth: number; text: string; id: string }[]; fm: Record<string, any> };
-const ROOT = path.join(process.cwd(), "content");
+export const ROOT = process.env.CONTENT_DIR || path.join(process.cwd(), "content");
 const walk = (d: string, out: string[] = []): string[] => {
   if (!fs.existsSync(d)) return out;
   for (const e of fs.readdirSync(d, { withFileTypes: true })) {

@@ -16,9 +16,13 @@ Images: put them next to the file (e.g. `content/writeups/ctf/name/image/a.png`)
 
 ## Deploy (Ubuntu LTS)
     sudo apt install docker.io docker-compose-v2 git
-    git clone <repo> && cd <repo> && cp .env.example .env   # set SITE_URL and DOMAIN
+    git clone <repo> && cd <repo> && cp .env.example .env   # set SITE_URL, DOMAIN, REVALIDATE_SECRET (openssl rand -hex 32)
     docker compose up -d --build
-Point DNS at the server through Cloudflare (SSL mode Full/Strict). Caddy obtains the certificate. Rebuild after content changes (`git pull && docker compose up -d --build`).
+Point DNS at the server through Cloudflare (SSL mode Full/Strict). Caddy obtains the certificate.
+
+**Publishing writeups:** just `git push`. The `puller` container fetches `REPO_URL` every `PULL_INTERVAL` seconds (default 3600) into the `repo` volume, and the app reads `content/` from there. On a new commit, the puller calls the internal `/api/revalidate` (blocked from the internet by Caddy), so pages refresh with no rebuild. Check it with `docker compose logs -f puller`; to pull immediately, run `docker compose restart puller`.
+**Code changes** (anything outside `content/`) still need `git pull && docker compose up -d --build` on the server; the puller logs a reminder when it sees one.
+**Always set `date:` in frontmatter:** git checkouts reset file times, so without it a post shows the pull date.
 
 ## Deviations / manual work
 - Colors, spacing scale, Inter and width come from the reference site's computed styles. Neue Haas Grotesk is commercial, so headings use "Helvetica Neue" (present on macOS) then Inter. Light-mode background/border/muted are estimates.

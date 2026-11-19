@@ -1,6 +1,7 @@
 import Link from "next/link"; import { notFound } from "next/navigation"; import { find, all, fmtLong, SECTIONS, Section } from "@/lib/content";
 import Mdx from "@/components/Mdx"; import Toc from "@/components/Toc"; import { site } from "@/lib/site";
-export const dynamicParams = false;
+export const dynamicParams = true; // new writeups pulled after build still render
+export const revalidate = 3600;
 export const generateStaticParams = () => all().map((i) => ({ section: i.section, slug: i.slug }));
 export function generateMetadata({ params }: { params: { section: Section; slug: string[] } }) {
   const i = find(params.section, params.slug); if (!i) return {};

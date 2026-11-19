@@ -2,6 +2,21 @@ services:
   app:
     build: { context: ., args: { SITE_URL: "${SITE_URL}" } }
     env_file: .env
+    environment: { CONTENT_DIR: /repo/content }
+    volumes: ["repo:/repo:ro"]  # writeups come from GitHub via the puller, not from the image
+    mem_limit: 384m
+    restart: unless-stopped
+  puller:
+    image: alpine/git:2.47.2
+    entrypoint: ["sh", "/pull-content.sh"]
+    environment:
+      REPO_URL: "${REPO_URL}"
+      BRANCH: "${BRANCH:-main}"
+      INTERVAL: "${PULL_INTERVAL:-3600}"
+      REVALIDATE_SECRET: "${REVALIDATE_SECRET}"
+    volumes: ["./scripts/pull-content.sh:/pull-content.sh:ro", "repo:/repo"]
+    mem_limit: 64m
+    depends_on: [app]
     restart: unless-stopped
   caddy:
     image: caddy:2
@@ -10,4 +25,4 @@ services:
     volumes: ["./Caddyfile:/etc/caddy/Caddyfile:ro", "caddy_data:/data"]
     depends_on: [app]
     restart: unless-stopped
-volumes: { caddy_data: {} }
+volumes: { caddy_data: {}, repo: {} }

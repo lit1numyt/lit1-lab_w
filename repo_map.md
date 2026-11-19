@@ -54,46 +54,46 @@ archive/
 
 ## URL to file
 
-| URL | File | What it renders |
-|---|---|---|
-| `/` and `/essays` | `app/page.tsx`, `[section]/page.tsx` | `EssaysIndex` |
-| `/research`, `/writeups`, `/projects` | `app/[section]/page.tsx` | `Blocks` (cards) |
-| `/<section>/<slug…>` | `app/[section]/[...slug]/page.tsx` | one article |
-| `/about` | `app/about/page.tsx` | plain text page |
-| `/assets/...` | `app/assets/[...path]/route.ts` | your images |
-| `/rss.xml`, `/sitemap.xml`, `/robots.txt` | `rss.xml/route.ts`, `sitemap.ts`, `robots.ts` | feeds and SEO |
+| URL                                             | File                                                | What it renders    |
+| ----------------------------------------------- | --------------------------------------------------- | ------------------ |
+| `/` and `/essays`                           | `app/page.tsx`, `[section]/page.tsx`            | `EssaysIndex`    |
+| `/research`, `/writeups`, `/projects`     | `app/[section]/page.tsx`                          | `Blocks` (cards) |
+| `/<section>/<slug…>`                         | `app/[section]/[...slug]/page.tsx`                | one article        |
+| `/about`                                      | `app/about/page.tsx`                              | plain text page    |
+| `/assets/...`                                 | `app/assets/[...path]/route.ts`                   | your images        |
+| `/rss.xml`, `/sitemap.xml`, `/robots.txt` | `rss.xml/route.ts`, `sitemap.ts`, `robots.ts` | feeds and SEO      |
 
 ## UI part to code
 
-| What you see | Where to edit | CSS classes in `globals.css` |
-|---|---|---|
-| Colours, fonts, content width | top of `globals.css` (`:root` tokens) | `--background`, `--accent`, `--width`… |
-| Top nav labels | `nav` in `lib/site.ts` | `.top`, `.top nav` |
-| Nav underline on current page | `components/Nav.tsx` | `.top nav a[aria-current]` |
-| Footer | `app/layout.tsx` | `footer` |
-| Site name, description, email, GitHub | `.env` and `lib/site.ts` | none |
-| Essays page (legend dots, About row, lists) | `components/EssaysIndex.tsx` | `.headrow`, `.legend`, `.about`, `.sec-h`, `.groups`, `.plain`, `.dot` |
-| Dated rows ("Recent Essays") | `Recent` in `components/Bits.tsx` | `.recent` |
-| Research/Projects/Writeups cards | `Blocks` in `components/Bits.tsx` | `.block-card`, `.bc-*`, `.pill` |
-| Article header (back link, meta, title, tags) | `app/[section]/[...slug]/page.tsx` | `.back`, `.ahead`, `.pills` |
-| Article typography (headings, lists, quotes, tables) | `globals.css` | `main.wide article …`, `article h2` etc. |
-| Code blocks | theme name in `components/Mdx.tsx` (`github-dark`) | `pre`, `code` |
-| Math | `remark-math` + `rehype-katex` in `Mdx.tsx` | `.katex-display` |
-| Figure captions, image path handling | `img` in `Mdx.tsx` | `figure`, `figcaption` |
-| Sidebar TOC and progress bar | `components/Toc.tsx` | `.toc`, `.track`, `.prog`, `.ind` |
-| Key takeaways / FAQ | `[...slug]/page.tsx` (reads frontmatter) | `.side`, `.faq` |
-| ⌘K palette look | `components/Palette.tsx` | `.pal`, `.pal-back` |
-| ⌘K search behaviour (scoring) | `score` function in `Palette.tsx` | none |
+| What you see                                         | Where to edit                                         | CSS classes in`globals.css`                                                        |
+| ---------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Colours, fonts, content width                        | top of`globals.css` (`:root` tokens)              | `--background`, `--accent`, `--width`…                                        |
+| Top nav labels                                       | `nav` in `lib/site.ts`                            | `.top`, `.top nav`                                                               |
+| Nav underline on current page                        | `components/Nav.tsx`                                | `.top nav a[aria-current]`                                                         |
+| Footer                                               | `app/layout.tsx`                                    | `footer`                                                                           |
+| Site name, description, email, GitHub                | `.env` and `lib/site.ts`                          | none                                                                                 |
+| Essays page (legend dots, About row, lists)          | `components/EssaysIndex.tsx`                        | `.headrow`, `.legend`, `.about`, `.sec-h`, `.groups`, `.plain`, `.dot` |
+| Dated rows ("Recent Essays")                         | `Recent` in `components/Bits.tsx`                 | `.recent`                                                                          |
+| Research/Projects/Writeups cards                     | `Blocks` in `components/Bits.tsx`                 | `.block-card`, `.bc-*`, `.pill`                                                |
+| Article header (back link, meta, title, tags)        | `app/[section]/[...slug]/page.tsx`                  | `.back`, `.ahead`, `.pills`                                                    |
+| Article typography (headings, lists, quotes, tables) | `globals.css`                                       | `main.wide article …`, `article h2` etc.                                        |
+| Code blocks                                          | theme name in`components/Mdx.tsx` (`github-dark`) | `pre`, `code`                                                                    |
+| Math                                                 | `remark-math` + `rehype-katex` in `Mdx.tsx`     | `.katex-display`                                                                   |
+| Figure captions, image path handling                 | `img` in `Mdx.tsx`                                | `figure`, `figcaption`                                                           |
+| Sidebar TOC and progress bar                         | `components/Toc.tsx`                                | `.toc`, `.track`, `.prog`, `.ind`                                            |
+| Key takeaways / FAQ                                  | `[...slug]/page.tsx` (reads frontmatter)            | `.side`, `.faq`                                                                  |
+| ⌘K palette look                                     | `components/Palette.tsx`                            | `.pal`, `.pal-back`                                                              |
+| ⌘K search behaviour (scoring)                       | `score` function in `Palette.tsx`                 | none                                                                                 |
 
 ## Frontmatter fields the code reads
 
-| Field | Used by |
-|---|---|
-| `title`, `description`, `date`, `updated`, `tags` | article header, lists, SEO, RSS |
-| `ctf`, `category`, `difficulty` | meta line on writeup pages and cards |
-| `takeaways`, `faq` | sidebar |
-| `group`, `subgroup` | Essays page topic columns |
-| `stat`, `related` | Research/Projects card meta and pills |
+| Field                                                       | Used by                               |
+| ----------------------------------------------------------- | ------------------------------------- |
+| `title`, `description`, `date`, `updated`, `tags` | article header, lists, SEO, RSS       |
+| `ctf`, `category`, `difficulty`                       | meta line on writeup pages and cards  |
+| `takeaways`, `faq`                                      | sidebar                               |
+| `group`, `subgroup`                                     | Essays page topic columns             |
+| `stat`, `related`                                       | Research/Projects card meta and pills |
 
 ## Tech stack
 

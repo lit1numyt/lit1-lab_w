@@ -1,6 +1,5 @@
-import fs from "fs"; import path from "path";
+import fs from "fs"; import path from "path"; import { ROOT } from "@/lib/content";
 // Serves images that live next to your .md/.mdx files (content/**/image/...).
-const ROOT = path.join(process.cwd(), "content");
 const TYPES: Record<string, string> = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif",
   ".webp": "image/webp", ".avif": "image/avif", ".svg": "image/svg+xml" };
 const dec = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };

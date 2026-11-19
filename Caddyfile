@@ -1,4 +1,6 @@
 {$DOMAIN} {
 	encode zstd gzip
+	# /api/revalidate is only for the puller on the internal Docker network
+	respond /api/* 404
 	reverse_proxy app:3000
 }
