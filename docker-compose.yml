@@ -4,6 +4,7 @@ services:
     env_file: .env
     environment: { CONTENT_DIR: /repo/content }
     volumes: ["repo:/repo:ro"]  # writeups come from GitHub via the puller, not from the image
+    ports: ["127.0.0.1:3000:3000"]  # localhost only: cloudflared on the host forwards the domain here
     mem_limit: 384m
     restart: unless-stopped
   puller:
@@ -18,11 +19,4 @@ services:
     mem_limit: 64m
     depends_on: [app]
     restart: unless-stopped
-  caddy:
-    image: caddy:2
-    ports: ["80:80", "443:443"]
-    environment: [DOMAIN]
-    volumes: ["./Caddyfile:/etc/caddy/Caddyfile:ro", "caddy_data:/data"]
-    depends_on: [app]
-    restart: unless-stopped
-volumes: { caddy_data: {}, repo: {} }
+volumes: { repo: {} }
